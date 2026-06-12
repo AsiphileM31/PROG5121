@@ -1,126 +1,163 @@
 package Assignment_1;
 
-import javax.swing.*;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Random;
+import java.util.Scanner;
 
 public class Message {
+
     private static int totalMessages = 0;
+
+    public static ArrayList<Message> sentMessages = new ArrayList<>();
+    public static ArrayList<Message> storedMessages =  new ArrayList<>();
+    public static ArrayList<Message> disregardedMessages = new ArrayList<>();
+    public static ArrayList<String> messageHashes = new ArrayList<>();
+
+    public static ArrayList<String> messageIDs =  new ArrayList<>();
+
     private String messageID;
     private int messageNumber;
     private String recipient;
     private String message;
     private String messageHash;
 
-    // Constructor
     public Message(int messageNumber, String recipient, String message) {
+
         this.messageNumber = messageNumber;
         this.recipient = recipient;
         this.message = message;
+
         this.messageID = generateMessageID();
         this.messageHash = createMessageHash();
     }
 
-    // Generate random ID
     private String generateMessageID() {
+
         Random random = new Random();
         long number = 1000000000L + (long)(random.nextDouble() * 9000000000L);
         return String.valueOf(number);
     }
 
-    // Check message ID
     public boolean checkMessageID() {
-        return messageID != null && messageID.length() <= 10;
+
+        return messageID.length() <= 10;
     }
 
-    // Check recipient
     public String checkRecipientCell() {
-        if (recipient != null && recipient.length() <= 12 && recipient.startsWith("+27")) {
-            String cleaned = recipient.replaceAll("\\s+", "");
-            if (cleaned.length() >= 10 && cleaned.length() <= 12) {
-                return "Cell phone number successfully captured.";
-            }
+
+        if(recipient.startsWith("+27") && recipient.length() <= 12) {
+
+            return "Cell phone number successfully captured.";
         }
+
         return "Cell phone number incorrectly formatted or does not contain international code.";
     }
 
-    // Create hash
     public String createMessageHash() {
-        if (message == null || message.trim().isEmpty()) {
-            return (messageID.substring(0, 2) + ":" + messageNumber + ":EMPTY").toUpperCase();
-        }
-        
+
         String[] words = message.split(" ");
-        if (words.length == 0) {
-            return (messageID.substring(0, 2) + ":" + messageNumber + ":EMPTY").toUpperCase();
-        }
-        
         String firstWord = words[0];
         String lastWord = words[words.length - 1];
-        
-        return (messageID.substring(0, 2) + ":" + messageNumber + ":" + firstWord + lastWord).toUpperCase();
+        return ( messageID.substring(0, 2) + ":" + messageNumber + ":" + firstWord + lastWord).toUpperCase();
     }
 
-    // Send message
     public String sentMessage() {
-        String[] options = {"Send Message", "Disregard Message", "Store Message"};
-        
-        int choice = JOptionPane.showOptionDialog(
-                null,
-                "Choose an option",
-                "Message Options",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.INFORMATION_MESSAGE,
-                null,
-                options,
-                options[0]
-        );
-        
-        switch (choice) {
-            case 0:
-                totalMessages++;
-                return "Message successfully sent.";
+
+        Scanner input = new Scanner(System.in);
+
+        System.out.println("""
+                
+                Choose an option:
+                
+                1) Send Message
+                2) Disregard Message
+                3) Store Message
+                """);
+
+        System.out.print("Enter choice: ");
+
+        int choice = Integer.parseInt( input.nextLine());
+
+        switch(choice) {
+
             case 1:
-                return "Message disregarded.";
+                totalMessages++;
+                sentMessages.add(this);
+                messageIDs.add(messageID);
+                messageHashes.add(messageHash);
+                
+                return "Message successfully sent.";
+               
+
             case 2:
+                disregardedMessages.add(this);
+                return "Message disregarded.";
+
+            case 3:
+                storedMessages.add(this);
+                messageIDs.add(messageID);
+                messageHashes.add(messageHash);
                 storeMessage();
                 return "Message successfully stored.";
+
             default:
-                return "No option selected.";
+
+                return "No valid option selected.";
         }
     }
 
-    // Print message
     public String printMessages() {
-        return "Message ID: " + messageID +
-               "\nMessage Hash: " + messageHash +
-               "\nRecipient: " + recipient +
-               "\nMessage: " + message;
+        return "Message ID: " + messageID + "\nMessage Hash: " + messageHash + "\nRecipient: "  + recipient + "\nMessage: " + message;
     }
 
-    // Return total messages
     public static int returnTotalMessages() {
+
         return totalMessages;
     }
-    
-    public static void resetTotalMessages() {
-        totalMessages = 0;
+
+    public void storeMessage() {
+
+        try {
+
+            FileWriter writer =  new FileWriter(  "storedMessages.json",true);
+
+            writer.write(
+                    "{\n" +
+                    "\"MessageID\":\"" + messageID + "\",\n" +
+                    "\"MessageHash\":\"" + messageHash +"\",\n" +
+                    "\"Recipient\":\"" + recipient + "\",\n" +
+                    "\"Message\":\"" + message + "\"\n" +
+                    "}\n\n"
+            );
+
+            writer.close();
+
+            System.out.println("Message stored successfully.");
+
+        }
+        catch(IOException e) {
+
+            System.out.println( "Error storing message.");
+        }
     }
 
-    // Store JSON
-    public void storeMessage() {
-        try {
-            FileWriter writer = new FileWriter("storedMessages.json", true);
-            writer.write("{\n");
-            writer.write("\"MessageID\":\"" + messageID + "\",\n");
-            writer.write("\"MessageHash\":\"" + messageHash + "\",\n");
-            writer.write("\"Recipient\":\"" + recipient + "\",\n");
-            writer.write("\"Message\":\"" + message + "\"\n");
-            writer.write("}\n");
-            writer.close();
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error storing message: " + e.getMessage());
-        }
+ 
+
+    public String getMessageID() {
+        return messageID;
+    }
+
+    public String getRecipient() {
+        return recipient;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getMessageHash() {
+        return messageHash;
     }
 }
